@@ -1,0 +1,96 @@
+/* Fitbit Fitness Tracker Data as part of the Google Data Analytics Certification - Capstone Project */
+
+
+
+--Find out how many Unique IDs
+
+SELECT * FROM (
+ SELECT
+  COUNT (DISTINCT `bellabeat-case-study-378401.fitbit_dataset.Weight_log`.Id) AS TotalUsers_WL,
+
+FROM `bellabeat-case-study-378401.fitbit_dataset.Weight_log`)
+  CROSS JOIN
+(SELECT COUNT (DISTINCT `bellabeat-case-study-378401.fitbit_dataset.Daily_Activities`.Id) AS TotalUsers_DA,
+    FROM  `bellabeat-case-study-378401.fitbit_dataset.Daily_Activities`)
+CROSS JOIN 
+  (SELECT COUNT (DISTINCT `bellabeat-case-study-378401.fitbit_dataset.Sleep_log`.Id) AS TotalUsers_SL
+    FROM `bellabeat-case-study-378401.fitbit_dataset.Sleep_log`)
+CROSS JOIN
+  (SELECT COUNT (DISTINCT `bellabeat-case-study-378401.fitbit_dataset.Heart_Rate`.Id) AS TotalUsers_HR
+    FROM `bellabeat-case-study-378401.fitbit_dataset.Heart_Rate`);
+
+--Total Active Users by Date and Average Steps 
+
+SELECT 
+COUNT (DISTINCT Id) AS TotalUsers,
+ActivityDay,
+AVG (StepTotal) AS AverageTotalSteps
+FROM `bellabeat-case-study-378401.fitbit_dataset.Daily_steps`
+GROUP BY ActivityDay;
+
+--Activity by Day of the Week
+
+SELECT ActivityDate,
+SUM(TotalActiveDistance) AS Total_ActiveDistance,
+SUM (TotalActiveMins) AS Total_ActiveMins
+FROM `bellabeat-case-study-378401.fitbit_dataset.Daily_Activities`
+GROUP BY ActivityDate
+ORDER BY Total_ActiveMins DESC, Total_ActiveDistance DESC;
+
+--Activity based on Time of the Day
+
+SELECT ActivityDate,
+SUM(TotalActiveDistance) AS Total_ActiveDistance,
+SUM (TotalActiveMins) AS Total_ActiveMins
+FROM `bellabeat-case-study-378401.fitbit_dataset.Daily_Activities`
+GROUP BY ActivityDate
+ORDER BY Total_ActiveMins DESC, Total_ActiveDistance DESC;
+
+--Total Average Steps
+
+SELECT 
+COUNT (DISTINCT Id) AS TotalUsers,
+ActivityDay,
+AVG (StepTotal) AS AverageTotalSteps
+FROM `bellabeat-case-study-378401.fitbit_dataset.Daily_steps`
+GROUP BY ActivityDay;
+
+--Activity level of Users
+
+SELECT 
+AVG (SedentaryMinutes/60) AS average_sedentary,
+AVG (LightlyActiveMinutes/60) AS average_lightlyactive,
+AVG (FairlyActiveMinutes/60) AS average_fairlyactive,
+AVG (VeryActiveMinutes/60) AS average_veryactive,
+AVG (TotalMinsActiveCal/60) AS average_total
+FROM `bellabeat-case-study-378401.fitbit_dataset.Daily_Intensities`;
+
+--Classification of Activity levels
+
+SELECT
+    Id,
+    COUNT(Id) AS user_activity,
+CASE
+  WHEN COUNT(Id) BETWEEN 1 AND 9 THEN 'Low'
+  WHEN COUNT(Id) BETWEEN 10 AND 19 THEN 'Moderate'
+  WHEN COUNT(Id) BETWEEN 20 AND 31 THEN 'High'
+END AS Activity
+FROM
+  `bellabeat-case-study-378401.fitbit_dataset.Daily_Activities`
+GROUP BY Id
+ORDER BY user_activity;
+
+--BMI values of users
+
+SELECT
+MAX (BMI) AS max_bmi,
+MIN (BMI) AS min_bmi,
+AVG (BMI) AS avg_bmi
+FROM
+  `bellabeat-case-study-378401.fitbit_dataset.Weight_log`;
+
+
+
+
+
+
