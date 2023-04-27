@@ -1,5 +1,3 @@
-#A case study of covid data as of 04/04/2023
-
 # Looking at the covid_deaths, and sorting it by location and date
 
 SELECT *
