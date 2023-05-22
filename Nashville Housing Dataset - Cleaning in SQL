@@ -1,0 +1,181 @@
+-- Nashville Housing Dataset
+
+/* CLEANING DATA IN SQL QUERIES */
+	
+SELECT *
+  FROM [Projects].[dbo].[Nashville_HousingData]
+
+
+-- Formatting the SaleDate
+SELECT SaleDate, CONVERT (Date, SaleDate) 
+  FROM [Projects].[dbo].[Nashville_HousingData]
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	SaleDate = CONVERT (Date, SaleDate) 
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add New_SaleDate Date ;
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	New_SaleDate = CONVERT (Date, SaleDate) 
+
+SELECT New_SaleDate, CONVERT (Date, SaleDate) 
+  FROM [Projects].[dbo].[Nashville_HousingData]
+
+/*Property Address Data*/
+SELECT *
+FROM [Projects].[dbo].[Nashville_HousingData]
+--WHERE PropertyAddress is NULL;
+ORDER BY ParcelID
+
+
+SELECT a.ParcelID, a.PropertyAddress, b.ParcelID, b.PropertyAddress, ISNULL(a.PropertyAddress, b.PropertyAddress)
+FROM [Projects].[dbo].[Nashville_HousingData] a
+JOIN [Projects].[dbo].[Nashville_HousingData] b
+	ON a.ParcelID = b.ParcelID
+	AND a.UniqueID <> b.UniqueID
+WHERE a.PropertyAddress is NULL
+
+
+Update a
+SET PropertyAddress = ISNULL(a.PropertyAddress, b.PropertyAddress)
+FROM [Projects].[dbo].[Nashville_HousingData] a
+JOIN [Projects].[dbo].[Nashville_HousingData] b
+	ON a.ParcelID = b.ParcelID
+	AND a.UniqueID <> b.UniqueID
+WHERE a.PropertyAddress is NULL
+
+-- Breaking out address into Individual Columns using Substrings
+
+SELECT PropertyAddress
+FROM [Projects].[dbo].[Nashville_HousingData]
+--WHERE PropertyAddress is NULL;
+--ORDER BY ParcelID
+
+--Updating the Table (One by One)
+SELECT 
+SUBSTRING(PropertyAddress, 1, CHARINDEX(',', PropertyAddress) -1) as Address
+, SUBSTRING(PropertyAddress, CHARINDEX(',', PropertyAddress) +1, LEN(PropertyAddress)) as Address
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add PropertySplitAddress Nvarchar(255);
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	PropertySplitAddress = SUBSTRING(PropertyAddress, 1, CHARINDEX(',', PropertyAddress) -1) 
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add CitySplitAddress Nvarchar(255);
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	CitySplitAddress = SUBSTRING(PropertyAddress, CHARINDEX(',', PropertyAddress) +1, LEN(PropertyAddress))  
+
+SELECT *
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+SELECT OwnerAddress
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+--Separting Owner Address based on the delimiter using parsename, Parsename works backwards 
+
+SELECT
+PARSENAME(REPLACE(OwnerAddress,', ', '. '), 3)
+, PARSENAME(REPLACE(OwnerAddress,', ', '. '), 2)
+, PARSENAME(REPLACE(OwnerAddress,', ', '. '), 1)
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add OwnerSplitAddress Nvarchar(255);
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	OwnerSplitAddress= PARSENAME(REPLACE(OwnerAddress,', ', '. '), 3)
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add OwnerSplitCity Nvarchar(255);
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	OwnerSplitCity = PARSENAME(REPLACE(OwnerAddress,', ', '. '), 2)  
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+	Add OwnerSplitState Nvarchar(255);
+
+Update [Projects].[dbo].[Nashville_HousingData]
+	SET	OwnerSplitState = PARSENAME(REPLACE(OwnerAddress,', ', '. '), 3)
+
+SELECT *
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+/* Change Y and N to Yes and No in "Sold as Vacant"" field */
+
+SELECT DISTINCT(SoldAsVacant), COUNT(SoldAsVacant)
+FROM [Projects].[dbo].[Nashville_HousingData]
+GROUP BY SoldAsVacant
+ORDER BY 2
+
+SELECT SoldAsVacant,
+CASE WHEN SoldAsVacant = 'Y' THEN 'Yes'
+	WHEN SoldAsVacant = 'N' THEN 'No'
+	ELSE SoldAsVacant
+	END
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+UPDATE [Projects].[dbo].[Nashville_HousingData]
+SET SoldAsVacant = CASE WHEN SoldAsVacant = 'Y' THEN 'Yes'
+	WHEN SoldAsVacant = 'N' THEN 'No'
+	ELSE SoldAsVacant
+	END
+
+/* Removing Duplicates */
+
+
+WITH RowNumCTE AS (
+SELECT *,
+ROW_NUMBER () OVER (
+PARTITION BY ParcelID,
+			PropertyAddress,
+			SalePrice,
+			SaleDate,
+			LegalReference
+			ORDER BY
+				UniqueID
+				) row_num
+
+
+FROM [Projects].[dbo].[Nashville_HousingData]
+--ORDER BY ParcelID
+)
+
+SELECT *
+FROM RowNumCTE
+WHERE row_num > 1
+ORDER BY PropertyAddress
+
+WITH RowNumCTE AS (
+SELECT *,
+ROW_NUMBER () OVER (
+PARTITION BY ParcelID,
+			PropertyAddress,
+			SalePrice,
+			SaleDate,
+			LegalReference
+			ORDER BY
+				UniqueID
+				) row_num
+
+
+FROM [Projects].[dbo].[Nashville_HousingData]
+--ORDER BY ParcelID
+)
+
+DELETE
+FROM RowNumCTE
+WHERE row_num > 1
+--ORDER BY PropertyAddress
+
+/* Deleting Unused Columns */
+
+SELECT *
+FROM [Projects].[dbo].[Nashville_HousingData]
+
+ALTER TABLE [Projects].[dbo].[Nashville_HousingData]
+DROP COLUMN OwnerAddress, TaxDistrict, PropertyAddress
